@@ -37,4 +37,4 @@ jobs:
       - name: Delete old container
         run: docker rm -f node-deploy-container
       - name: Run docker container to migrate database
-        run: docker run -d -p 3000:3000 --name node-deploy-container --network node-net -e DATABASE_URL=postgresql://postgres:supersecret123@docker-postgres:5432/mydb?schema=public acmachado14/node-deploy acmachado14/node-deploy sh -c "npm run migrate && npm run start"
+        run: docker run -d -p 3000:3000 --name node-deploy-container --network node-net -e DATABASE_URL=postgresql://postgres:supersecret123@docker-postgres:5432/mydb?schema=public acmachado14/node-deploy sh -c "npm run migrate && npm run start"
