@@ -15,7 +15,7 @@ jobs:
       - name: Build Docker image
         run: docker build -t acmachado14/node-net-priv .
       - name: Tag Docker image
-        run: docker tag acmachado14/node-net-priv:latest
+        run: docker tag acmachado14/node-net-priv:latest acmachado14/node-net-priv:latest
       - name: Publish image to Docker Hub
         run: docker push acmachado14/node-net-priv:latest
   deploy:
