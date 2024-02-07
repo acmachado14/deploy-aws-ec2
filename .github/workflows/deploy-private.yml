@@ -1,0 +1,43 @@
+name: Deploy Private Image
+
+on:
+  push:
+    branches: [private-image]
+
+jobs:
+  build:
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+      - name: Login to Docker Hub
+        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build Docker image
+        run: docker build -t acmachado14/node-net-priv .
+      - name: Tag Docker image
+        run: docker tag acmachado14/node-net-priv:latest
+      - name: Publish image to Docker Hub
+        run: docker push acmachado14/node-net-priv:latest
+  deploy:
+    needs: build
+    runs-on: [aws-ec2]
+    steps:
+      - name: Login to Docker Hub
+        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+      - name: Create network if it does not exist
+        run: |
+          if ! docker network inspect node-net &> /dev/null; then
+            docker network create node-net
+          fi
+      - name: Pull postgres image from docker hub
+        run: docker pull postgres:13
+      - name: Delete old postgres container
+        run: docker rm -f docker-postgres
+      - name: Run postgres container
+        run: docker run -d --name docker-postgres --network node-net-priv -p 5432:5432 -e POSTGRES_DB=mydb -e POSTGRES_PASSWORD=supersecret123 -e POSTGRES_USER=postgres postgres:13
+      - name: Pull image from docker hub
+        run: docker pull acmachado14/node-deploy:latest
+      - name: Delete old container
+        run: docker rm -f node-deploy-container
+      - name: Run docker container to migrate database
+        run: docker run -d -p 3000:3000 --name node-deploy-container --network node-net-priv -e DATABASE_URL=postgresql://postgres:supersecret123@docker-postgres:5432/mydb?schema=public acmachado14/node-deploy sh -c "npm run migrate && npm run start"
